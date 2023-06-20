@@ -1,0 +1,967 @@
+-> CRUD APPLICATION
+If you are using visual studio code, use the ctrl short cut "ALT + Z" to wrap this text in your window for easier resizing.
+-------------------
+
+TOOLS: 
+------
+
+[] NextJs 
+Make sure its versions between "^12.2.5 and ^13", also use an appropriate framework such as Visual Studio Code.
+
+[] Javascript and Typescript. 
+Note: I will try to limit the typescript to just prisma related database creations and the rest will be in javacript. Typescript files support the Javascript language coomletely (which is why I wrote Javascript code in a lot of tsx files) but not the other way around so make sure you're following the file's naming system or change it according to your needs if you prefer another language. 
+
+[] NextAuth - Will be an nmp install inside NextJs. 
+Note:*The packages might need a npm --force install*
+
+[] Postgres - The database will be created using Vercel's 
+database creation functionality, servers running by
+Vercel and taking care of database storage. 
+
+[] Prisma - Will be an npm install inside NextJs, 
+necessary to communicate database information from 
+Postgres to the NextJs framework. Database creations
+and amends can be made with prisma (which is only a
+tool, not the database itself) Essentially it is a 
+third party tool that makes writing database code 
+easier for less finicky and robust apps or sites
+ instead of writing raw sql which is perferrable a more
+ robust code that will benefit a more robust site.
+
+[] Prisma Client - This is another part of Prisma,  the
+client is necessary to make sessions and listen for 
+incomig requests to the database. All database oriented.
+
+[] Oauth - GitHub will provide Oauth authentication 
+trough their API so users can log in (Oauth's use 
+will be in conjunction with NextAuth's and they 
+together will authenticate users using the NextJs
+framework)
+
+[] GitHub Account - At least 2 accounts to test the multi-user 
+features of the application. 
+
+[] Git - A GitHub communication tool. Must be downloaded onto the computer system through their website (it comes with the Git UI, Git Bash, and Git CMD), and can be accessed through NextJs's console after download. You'll be uploading your folders to GitHub through the console with this tool.
+
+[] Vercel CLI - Installed with npm in NextJs, it's for a few things like pulling Vercel information (in this case, some database information) with the console to the NextJs framework. 
+
+[] Vercel Account - An account For deployment. Files will be pushed to GitHub,
+which Vercel will automatically sync (once you've connected 
+your Github with Vercel) 
+
+
+
+For your information
+--------------------
+
+[Break Down:] 
+The Logic behind how this app works. 
+Keep in mind that all apps are different, and it depends on the maker of the app, and how his flow works that give off any clues on ow the app was built. Some are made using straight up linear, bare bones logic and some are more complicated, requiring you to take your time and analize each file to make sure you understand how they correspond to each other. 
+
+[First Note:]
+This application made using javascript for most of the front end logic, mixing it with typescript for prisma db use use and also more control of type naming and type checking (one of typescripts main hilights) in the logic code. You'll notice that none of the files have a .js extension, and I'm naming them strictly with .tsx for the root files in pages, and .ts for the backend api files. How the backend and the front end interacts is one very crucial thing to understand. You have your api files that take care of the back end work, in other words the server stuff, and the files in the root of pages that are the front end of the application, in other words the UI seen by the user (mostly). I say mostly, because there is some logic applied in the code as well that has to be able to interact with the backend to maintain the connection. 
+
+
+
+[1]
+With this app, we have a Postgres databse created externally on Vercel, which holds already created the .env file's variables (mainly the actual database url called "POSTGRES_PRISMA_URL") for Prisma so that you can actually communicate using Prisma (and the PrismaClient) inside NextJs. We could use raw Sql, but we chose Prisma to facilitate the merging of code as raw sql has a different, more robust approach of merging with code that is only essential in a more robust, super high end project. 
+
+
+
+[2]
+Prisma also come with one important feature, the PrismaClient. PrismaClient is what links up a session between your code and an external database (We have one, it's Vercel's Postgres db). With the PrismaClient, any changes can be made and pushed from NextJs to the database (commands are in the steps) so that when you view your site through localhost or the browser you will see the updates. Inside the project, there is a /lib/prisma.ts file that is imported in every front end or back end code that requires special requests from the database. This file's code is essentially the creation of the actual PrismaClient and setting it to cast a link called a global session (meaning one session for the whole project) at all times when it senses a requests from a code, then completes that request. The request could be a fetch post, or update or anything in between. That's the basics concering the PrismaClient and how it interacts with the code and works to do stuff for the user. 
+
+
+
+[3] The next thing to understand in this flow is how the api routes are handled. We chose to make 3 api routes, api/auth, api/post, and api/publish. These routes I just named are the same folders that will be in your project.
+
+
+
+(a) The api/auth folder contains a [...nextauth].ts file. 
+
+- [...nextauth].ts  -  This file holds the logic for authentication, and most of what is considered important for authentication. It grabs the PrismaClient from '/lib/prisma' to get that session going and intact ready for requests with the prisma adapter, GitHubProvider and the OAuthConfig modules; for interconnecting and validating your site through github and the database. The .env variables which were pulled from vercel and loded to .env, are also added in schema.prisma such as the url that connects prisma to the database. (it's read in the generator client provider line inside schema.prisma) which is, like we said then imported with -> " import prisma from '../../../lib/prisma' "  inside our [...nextauth].ts file.
+
+(b) The api/post folder contains an [id].ts file and a index.ts file.
+
+- [id].ts -  This file has the " [id] "  naming style so that It can acept any value in it. Meaning the [id] part in the api route itself api/post/[id] will have a generated value in order to auto generate itself. Remember this is an api route not a front end route. It be difficult to understand the need for this route, but in the context that we're working on, this route is only for handling requests made through the UI, specifically when the user wants to delete something. The code imports the PrismaClient, and the getsession module library as well from next/nextauth. Basically, when anytime a front end code makes a fetch request to this endpoint, it will executed it. We could go with not making an api/post/[id].ts file but that means we would have to add this code everywhere we need this specific service. Instead, since it's only backend code, and not front end code this file can be made in the api directory. This one specifically runs anytime the PrismaClient detects a fetch delete request, and there's also session management code that implements logic to determine if the right user is requesting the http delete method (In short, this code allows the user to delete any posts made, and it's configuration is an api route. This api route is not navigatable, because there's nothing to show, it's just logic code, and it runs automatically whenever the PrismaClient receives a delete rquest is sent to it's endpoint from another code off another file request and THEN proceeds to delete it from the database!). 
+
+(c) The api/publish folder contains an [id].ts file (just the api/post folder does). 
+
+- [id].ts - This file has the same name as the one in the /api/post folder, but that does't affect anything.We could've named the previous file api/post/[delete].ts instead of api/post/[id].ts as a better naming convention if that helps however because it is in it's own folder, it has it's own right. On top of that, it is not navigatable like we mentioned. This file is not navigatable either, and it holds logic for the non directly related front end matters. This matter, is, get ready for it.... the complete opposite of what the previous file is doing. This file has the Prisma Client also imported in it and the PrismaClient is listening for fetch update requests instead of delete requests. Whenever a request is made to update (in other words to post something) it will allow the posting to happen. To understand how this ties in to the front end, look at how create.tsx is created. It holds the necessary code for the layout of the page, the create button, etc, but the catch is in the fetch request. It's literally going to the api route api/post and making a fetch request to that endpoint. Remember all those PrismaClients listening? Well api/post/index has a PrismaClient ready to listen to fetch request of the update kind, so therefore it will respond. 
+
+
+[4] I guess the last thing to metion concerning the structure of this app's filing scheme, is the pages/p folder. it holds one single file, [id].tsx. This file routable by the UI, because it returns a html element in it (the ui) and its parent folder is in the root of pages. it holds a self generating variable name, [id], which according to the logic of this project, is a link to a post's own page. Because there will be many posts, they will each automatically generate their own post page through the component/Post.tsx component, which uses typescript to interpolate (type annotate) the required fields matching the database fields for posts to make an actual post such as name, author id, etc. Post.tsx has a function that asks the router to push the returned html element (ui) with it's styles to the desired location = Router.push(`/p/${the_post.id}`); this is how individual pages are made for posts. This post element, as seen on it's individual page can be brought in to the index page as well, as it is done in the return statement. 
+
+
+These files are pretty much what they say they are, however it's the code inside that matters.
+
+
+STEPS:
+======
+
+[STEP 1] 
+Install this example template from NextJs by running:
+--------NEXTJS CONSOLE COMMAND--------
+npx create-next-app --example https://github.com/prisma/blogr-nextjs-prisma/tree/main blogr-nextjs-prisma
+--------NEXTJS CONSOLE COMMAND--------
+ It was written by By Nikolas Burk, not that that's super important but to give you perspective, this is a template that can be run with npx because it was approved by NextJs. If you want, you could just do your own by running npx create-next-app@latest, but you'll have to make the starting files yourself. 
+
+
+
+[STEP 2]
+Cd into the new directory that was created and run: 
+--------NEXTJS CONSOLE COMMAND--------
+npm run dev
+--------NEXTJS CONSOLE COMMAND--------
+This will run the app in the selected browser, 
+usually on the local host at 127.0.0.1:3000, already sporting a UI for the index page that you can see. 
+
+
+
+[STEP 3]
+Log in to GitHub and make a new repo, naming it what you'd like. There are steps on the repo page indicating the commands necessary to push files from your framework to it.
+
+
+[STEP 4]
+In your console, push the project to your Github. You've downloaded Git, so the commands will work in the console, by following the steps in the Github repository that you just made.
+
+
+[STEP 5]
+Log into Vercel, and connect your GitHub. Your GitHub projects should now be visible in Vercel. Deploy the project. No errors should occur. Now vercel is holding your project, ultimately giving you a domain tied with the vercel name on which your project can be viewed by anyone who has the link. In other words, it's officially a website now. 
+
+
+[STEP 6]
+Inside Vercel, find the storage tab and get into the database settings, select create a new database (Postgres), name the datababse what you want and select the closest reasonable server. In this step, you are actually creating a Postgres database through Vercel's servers and because you aren't doing it from scratch, there are a few environmental variables created for you by Vercel automatically but they are empty. Now the first part of the database creation is done, however there are no real tables made yet, which you will do through Prisma. NOTE: You will be adding the environmental variables and setting it up.
+
+
+[STEP 7]
+Install the Vercel CLI by running: 
+--------NEXTJS CONSOLE COMMAND--------
+npm i -g vercel@latest
+--------NEXTJS CONSOLE COMMAND--------
+
+
+[STEP 8]
+Pull the empty environmental variables file from Vercel with the newly installed CLI and bring it in to Next.Js bu running: 
+--------NEXTJS CONSOLE COMMAND--------
+vercel env pull .env.local
+--------NEXTJS CONSOLE COMMAND--------
+
+
+
+[STEP 9]
+Then, install Prisma! (Note: You are installing prisma right now, you'll be installing the PrismaClient later)
+Run: 
+--------NEXTJS CONSOLE COMMAND--------
+npm install prisma --save-dev
+--------NEXTJS CONSOLE COMMAND--------
+
+
+[STEP 10]
+Create the Database using typescript. Again, we're using prisma, which is an ORM (object-relational-mapping) tool that can read the PostgresSQl library, it uses typescript as it's language. Here, there are two tables, one Users and One Posts. This is how we'll leave it for now since, these tables are enough to get things going. 
+NOTE: *Primary Keys are identified with:   @id
+      *Foreign Keys are indentified with:  @relation
+------------------------------------
+Code:
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["jsonProtocol"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+  shadowDatabaseUrl = env("POSTGRES_URL_NON_POOLING") // used for migrations
+}
+
+model Post {
+  id        String     @default(cuid()) @id
+  title     String
+  content   String?
+  published Boolean @default(false)
+  author    User?   @relation(fields: [authorId], references: [id])
+  authorId  String?
+}
+
+model User {
+  id            String       @default(cuid()) @id
+  name          String?
+  email         String?   @unique
+  createdAt     DateTime  @default(now()) @map(name: "created_at")
+  updatedAt     DateTime  @updatedAt @map(name: "updated_at")
+  posts         Post[]
+  @@map(name: "users")
+}
+------------------------------------
+
+[STEP 11]
+For your in depth db usage experience, try the visual db UI. Run Prisma Studio with: 
+--------NEXTJS CONSOLE COMMAND--------
+npx prisma studio 
+--------NEXTJS CONSOLE COMMAND--------
+ This will create an instance on your localhost, usually on 127.0.0.1:5555. This is the UI for your database, created by Vercel, running through your local host port. There you will be able to manually convert your database instead of writing code.
+
+[STEP 12]
+You've created a schema for your db, and you can view it on an actual UI, however we will need The Prisma Client to auto-generate this db and future changes/updates into your modules inside the framwework. To install the Prisma Client: 
+--------NEXTJS CONSOLE COMMAND--------
+npm install @prisma/client
+--------NEXTJS CONSOLE COMMAND--------
+
+
+[STEP 13]
+To use the PrismaClient, run the command: 
+--------NEXTJS CONSOLE COMMAND--------
+npx prisma db generate
+--------NEXTJS CONSOLE COMMAND--------
+Note1: *Use this whenver you make changes that are not reflecting system-wide.
+Note2: *If you create data in the Prisma studio (ex; create a table of users) but you don't do it in the schema.prisma file, once you pull this command, it will re-update the table in the UI as well to match what you have in the schema. We've decided to use the schema.prisma file to create the database. 
+
+
+
+[STEP 14]
+Push the database information you just created to the database location (in Vercel) with: 
+--------NEXTJS CONSOLE COMMAND--------
+npx prisma db push
+--------NEXTJS CONSOLE COMMAND--------
+NOTE: " npx prisma db push " is solely for pushing the datababse information to the database location (in this case, to Vercel)
+
+
+
+[STEP 15]
+Create a new directory with its file in the root folder of the project: 
+[] lib/prisma.ts
+
+[]  Description: 
+    This code creates the Client that checks the NODE_ENV variable and see if it is in PRODUCTION (meaning there's a session going on), and if it is, it will create a new instance directly on that session,however it checks to make sure that if there isn't a global.prisma (project-wide session) it will set a global.prisma and name it the Client. " (!global.prisma) " means " NOT global.prisma ", the ! for NOT. 
+------------------------------------
+[] Code: 
+
+// lib/prisma.ts
+import { PrismaClient } from '@prisma/client';
+
+let prisma: PrismaClient;
+
+if (process.env.NODE_ENV === 'production') {
+  prisma = new PrismaClient();
+} else {
+  if (!global.prisma) {
+    global.prisma = new PrismaClient();
+  }
+  prisma = global.prisma;
+}
+------------------------------------
+
+
+[STEP: 16]
+Change the index page to accept basic functions such as a getServerSideProps function that will take props from the database with a fetch post request (await prisma.post.findMany) and look for multiple values (like "published", "author" and "name" that come from the database along with their assigned properties. If the information matches, it will return props and revalidate the page  every 10 seconds (because we are using server side rendering, or SSR to fetch props upon demand, in this case the feed, which are the posts that the users will be making). This is done through a function called getServerSideProps, and it is a native NextJs function that interacts with props over the server in non static mode, meaning upon request and dynamic fetching ( in our case we have posts that are dynamically changing through requests by getting deleted and added, or updated ect)
+------------------------------------
+[] Code: 
+// paegs/index.tsx
+
+import prisma from '../lib/prisma';
+import { GetServerSideProps } from 'next';
+
+
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  const feed = await prisma.post.findMany({
+    where: { published: true },
+    include: {
+      author: {
+        select: { name: true },
+      },
+    },
+  });
+
+  return {
+    props: { feed },
+  };
+};
+------------------------------------
+
+
+[STEP: 17]
+[] Install NextAuth: 
+--------NEXTJS CONSOLE COMMAND--------
+npm install next-auth@4 @next-auth/prisma-adapter 
+--------NEXTJS CONSOLE COMMAND--------
+
+[!] NOTE: The use of " --force may be required. 
+
+--------NEXTJS CONSOLE COMMAND--------
+[] SEE: npm install next-auth@4 @next-auth/prisma-adapter --force
+--------NEXTJS CONSOLE COMMAND--------
+[] NOTE: if you are running a version of Nextjs not directly compatible with NextAuth, you might get away with ignoring the warnings, as they may not directly affect the workings of this project. However I am using version 13.2.3 and that is over the version required, however it still works with a few minor errors logged in the console during run time, but none that directly affect the most important features of the app. You may notice that logging in requires clearing of cookies and that you may also actually need to be signed in to github on a seperate tab to be able to log i to your site through the Oauth method. All these errors can be viewed in any browser by checking the developer tab and it's console area.
+
+
+
+[STEP: 18]
+[] Update and add to the database the following:
+  -Model Post
+  -Model Account
+  -Model Session
+  -Model VerificationToken
+------------------------------------
+[] Table scheme: 
+// prisma/schema.prisma.ts
+
+model Post {
+  id        String  @id @default(cuid())
+  title     String
+  content   String?
+  published Boolean @default(false)
+  author    User?@relation(fields:[authorId], references:[id])
+  authorId  String?}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String  @map("user_id")
+  type               String
+  provider           String
+  providerAccountId  String  @map("provider_account_id")
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+  oauth_token_secret String?
+  oauth_token        String?
+
+  user User @relation(fields:[userId], references:[id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique@map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields:[userId], references:[id], onDelete: Cascade)}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?@unique
+  emailVerified DateTime?
+  image         String?
+  posts         Post[]
+  accounts      Account[]
+  sessions      Session[]}
+
+model VerificationToken {
+  id         Int      @id @default(autoincrement())
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])}
+}
+------------------------------------
+
+[step: 19]
+Create a New OAuth App with GitHub.
+Go to settings/developer settings and choose create a new OAuth App. 
+Name it what you want, however make sure you set the authorization callback url at the bottom is the same as the NEXTAUTH_URL value in the .env file. if it isn't set them both. 
+The url should look somewhat like this: " http://127.0.0.1:3000/api/auth/ "
+NOTE: The environmental in the .env file may have a different naming convention. I'd add CLIENT_ID CLIENT_SECRET if it's not there and use that naming convention. and Take note of the CLIENT_ID as well as the CLIENT_SECRET which are displayed on the same page as your Github Oauth App. Paste them in your .env file. Now you have variables from Oauth that can be used for a variety of tasks. 
+
+
+[STEP: 20]
+Next is to "persist" the user's authentication session. We want the user's session to persist, or to remain in effect the whole time they are logged in. This is mainly effective in situations where the authentication process needs to be quicker for the user simply by setting the users session information in cache. It can make re-logging in faster than the first time, and also keep session information on screen for longer without timing out due to errors (skippy connection, low latency, etc). The ideal place to persist the session would be in the _app.tsx folder which holds the wrapper component of your whole project. We will use SessionProvider which is the default for handling the higher level flow state of authentication and session management. 
+NOTE: You could technically use useSession or getSession instead but SessionProvider is the best for wrapping sessions with the goal of persisting a user. 
+
+------------------------------------
+Code:
+// _app.tsx
+
+import { SessionProvider } from 'next-auth/react';
+import { AppProps } from 'next/app';
+
+const App = ({ Component, pageProps }: AppProps) => {
+
+  return (
+    <SessionProvider session={pageProps.session}>
+      <Component {...pageProps} />
+    </SessionProvider>
+  );
+};
+
+export default App;
+------------------------------------
+
+
+[STEP: 21]
+Changing the header component to add Log In functionality. 
+
+NOTE:The log in functionality will not work unless you've install NextAuth, 
+again this might take a npm --force command ( You would have seen an error in your code telling you that NextAuth has been imported but not installed)
+
+[] We're creating a const named router which will take the current page's route's information and we'll use that to compare it to the active link to make sure they match so we can control its color this way.  I know, interesting method right? 
+
+[]It currently displays just the feed button on the left side of the page. 
+
+[] a variablr was made for the right side but it was set to null for now but here's how you change it: 
+
+------------------------------------
+//components/Header.tsx
+
+import React from "react";
+import Link from "next/link";
+import { useRouter } from "next/router";
+
+const Header = () => {
+
+  const router = useRouter();
+
+  const active_link = (path) => router.pathname === path;
+
+  let left = (
+    <div className="left">
+      <Link href="/">
+        <a className="bold" data-active={active_link("/")}>
+          Feed
+        </a>
+      </Link>
+      <style jsx>{`
+        .bold {
+          font-weight: bold;
+        }
+
+        a {
+          text-decoration: none;
+          color: #000;
+          display: inline-block;
+        }
+
+        .left a[data-active="true"] {
+          color: red;
+        }
+
+        a + a {
+          margin-left: 1rem;
+        }
+      `}</style>
+    </div>
+  );
+
+  let right = null;
+
+  return (
+    <nav>
+      {left}
+      {right}
+      <style jsx>{`
+        nav {
+          display: flex;
+          padding: 2rem;
+          align-items: center;
+        }
+      `}</style>
+    </nav>
+  );
+};
+
+export default Header;
+------------------------------------
+
+[STEP: 22]
+Next we will create the authentication process for the 
+This file is called: pages/api/auth/[...nextauth].ts
+The three dots ARE part of the syntax, don't ommit them.
+
+[] This page is quite hard to understand, so I've explained it a little with hash comments
+------------------------------------
+// /pages/api/[...nextauth].ts
+
+import NextAuth  from 'next-auth';
+import { PrismaAdapter } from '@next-auth/prisma-adapter';
+import { OAuthConfig } from 'next-auth/providers';
+import { Profile } from 'next-auth';
+import GitHubProvider from 'next-auth/providers/github';
+import prisma from '../../../lib/prisma';
+import crypto from 'crypto';
+
+//Function created that will return a 32 byte number in hex format The function operates as a CONST called "generateSecret". This secret will be come the SECRET in the next CONST.
+const generateSecret = () => {
+  return crypto.randomBytes(32).toString('hex');
+};
+
+//SECRET was supposed to have been pulled from the .env file, however it does not exist in there becaue we prefer to actually geenerate a secret ourselves. So here SECRET becomes the generated 32 byte hex number ( generateSecret ).
+const secret = process.env.SECRET || generateSecret();
+
+//CSRF_SECRET was pulled from the .env file with process.env.CSRF_SECRET and given the name const CSRF_SECRET. It's also logged in the console so you can see the CSRF_SECRET
+const csrfSecret = process.env.CSRF_SECRET
+console.log('CSRF_SECRET:', csrfSecret);
+
+//CLIENT_SECRET was pulled from the .env file with process.env.CLIENT_SECRET and given the name const CLIENT_SECRET. It's also logged in the console so you can see the CLIENT_SECRET
+const CLIENT_SECRET = process.env.CLIENT_SECRET;
+console.log('CLIENT_SECRET:', CLIENT_SECRET);
+
+//CLIENT_ID was pulled from the .env file with process.env.CLIENT_ID and given the name const CLIENT_ID. It's also logged in the console so you can see the CLIENT_ID
+const CLIENT_ID = process.env.CLIENT_ID;
+console.log('CLIENT_ID:', CLIENT_ID);
+
+//The authentication function. It is given the name authHandler and it is asynvhronous only because it holds the await keyword. The function will not run unless NextAuth steps in and does it's request first. Once it does it's request, the options field will be called and in there all the necessary elenents for this request are apssed in. a response is also needs to complete all handshakes on the HTTP world, so authHandler works asynchronously with it to deliver the const options's req and res tasks
+const authHandler = async (req, res) => {
+
+  await NextAuth(req, res, options);
+  
+};
+export default authHandler;
+
+//The objects that are passed in the previous async function to provide authentication. Note that it holds objects for OAuth to Github configurations. The way it's setup, it can take any provider. if you choose Google, you just chage the GitHubProvider to GitHubProvider (remember it also needs to be imported) and the secrets and id's would also have to match. however we havee used GitHubProvider. the "   providers: OAuthConfig<Profile>[]; " line is just the setup configuartion for Oauth with empty placeholder to accept the configurations of your choesn provider.
+const options: {
+  providers: OAuthConfig<Profile>[];
+  adapter: any;
+  secret: string;
+  session: any;
+  csrfToken?: { secret: string };
+} = {
+  providers: [
+    GitHubProvider({
+      clientId: CLIENT_ID,
+      clientSecret: CLIENT_SECRET,
+    }),
+  ],
+  adapter: PrismaAdapter(prisma),
+  secret: secret,
+  session: {email: true},
+  csrfToken: {
+    secret: csrfSecret,
+  },
+};       
+------------------------------------
+
+[STEP:  23]
+Creating a new page for the UI. 
+It will be called pages/create.tsx 
+This page holds the UI scheme from components/Layout: 
+------------------------------------
+// pages/create.tsx
+import React, { useState } from 'react';
+import Layout from '../components/Layout';
+import Router from 'next/router';
+
+//For this create page we be making a function called Draft. This will hold te whole function (which holds a async function within it) including the UI render. 
+const Draft = () => {
+
+//UseState has been imported (at the top) so that we could play with the state of the created consts: title and content. These two consts are allowed to have a double value by making them equal to a useState value ( which is either title or setTtile for the first created const, and content or setContent for the second created const)
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+
+//This is the core of the whole Draft function, it will submit all the data when requested. 
+//We've attached a name value to submitData called event so we can use it inside the function. Remember this submitData function is asynchronous so not all of it has to be executed in order. 
+  const submitData = async event => {
+//This is usually the regular way to prevent a form from triggering a full page reload (which can happen). Here we've attached the given name of the function to the preventDefault method. 
+   event.preventDefault();
+
+    try {
+//We created a const called body and assigned the previously created consts title, and content, which can  trigger their dual name because useState has been assigned to them already. 
+      const body = { title, content };
+//Fetch POST request to the api route called api/post, which means its going to that api route and going to try an http POST (creating something and submitting it) with the required HTTP header and body requirements. The await keyword is used so that nothing inside this async submitData function happens before this happens. 
+      await fetch('/api/post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+//The next await: After the first await, the second await has to go through, which is a push to a page. Basically the imported module " import Router from 'next/router'; " will do the pushing. 
+      await Router.push('/drafts');
+    } 
+//If any extra weird errors are caught during the procedure, the broswer will log them the console. Errors are still logged to the console without it , however adding it here will promppt the browser to log the additional errors caught within this scope. 
+    catch (error) {
+      console.error(error);
+    }
+  };
+  
+// Finally the UI rendering. 
+  return (
+//Layout is being called, it's called Layout but it actually holds the Header. The Layout (Header) will be wrapping all the stuff you see on the page (which is the create form in this case, for this create.tsx page). We have the parent div with classname page, the form itself which carries an onSubmit element that we passed the submitData function to. There is a input with the type submit that will preform the submit action within the form with a small finishing touch to redirect you to the index page with the onClick action: onClick={() => Router.push('/')}. 
+    <Layout>
+      <div className="page">
+        <form onSubmit={submitData}>
+          <h1>New Draft</h1>
+          <input
+            autoFocus
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Title"
+            type="text"
+            value={title}
+          />
+          <textarea
+            cols={50}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Content"
+            rows={8}
+            value={content}
+          />
+          <input disabled={!content || !title} type="submit" value="Create" />
+          <a className="back" href="#" onClick={() => Router.push('/')}>
+            or Cancel
+          </a>
+        </form>
+      </div>
+      <style jsx>{`
+        .page {
+          background: var(--geist-background);
+          padding: 3rem;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+
+        input[type='text'],
+        textarea {
+          width: 100%;
+          padding: 0.5rem;
+          margin: 0.5rem 0;
+          border-radius: 0.25rem;
+          border: 0.125rem solid rgba(0, 0, 0, 0.2);
+        }
+
+        input[type='submit'] {
+          background: #ececec;
+          border: 0;
+          padding: 1rem 2rem;
+        }
+
+        .back {
+          margin-left: 1rem;
+        }
+      `}</style>
+    </Layout>
+  );
+};
+
+export default Draft;
+------------------------------------
+
+
+[STEP: 24] 
+Creating the api/post/index.ts API route. This is the root file of the api/post directory. 
+Prisma Client is listening here and accepting delete requests from users. 
+------------------------------------
+import { getSession } from 'next-auth/react';
+import prisma from '../../../lib/prisma';
+
+export default async function handle(req, res) {
+  const session = await getSession({ req });
+
+  if (!session) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  if (req.method !== 'DELETE') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
+  const postId = req.body.id;
+
+  try {
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+    });
+
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    console.log('Session object:', session); // Log the entire session object
+
+
+    // Check if the authenticated user is the owner of the post
+    if (post.authorId !== session.user) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    // Delete the post
+    await prisma.post.delete({
+      where: { id: postId },
+    });
+
+    res.status(200).json({ message: 'Post deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
+
+// Run npx prisma generate and npx prisma db push if you encounter data syncing issues. 
+
+[STEP: 25] 
+Create the drafts page. 
+This code uses getServerSideProps to fetch the objects that are server side rendered (dynamically), in this case, the indivdual posts and the elemnents within them. 
+----------------------------------------------------
+// pages/drafts.tsx
+import React from 'react';
+import { useSession, getSession } from 'next-auth/react';
+import Layout from '../components/Layout';
+import Post from '../components/Post';
+import prisma from '../lib/prisma';
+
+export async function getServerSideProps({ req, res }) {
+
+  const session = await getSession({ req });
+
+  if (!session) {
+    res.statusCode = 403;
+    return { props: { Items: [] } };
+  }
+
+  const Items = await prisma.post.findMany({
+    where: {
+      author: { email: session.user.email },
+      published: false,
+    },
+    include: {
+      author: {
+        select: { name: true },
+      },
+    },
+  });
+
+
+
+  return {
+    props: { Items },
+  };
+}
+
+const Drafts = (props) => {
+  
+  const session = useSession();
+
+  if (!session.data) {
+    return (
+      <Layout>
+        <h1>My Drafts</h1>
+        <div>You need to be authenticated to view this page.</div>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout>
+      <div className="page">
+        <h1>My Drafts</h1>
+        <main>
+          {props.Items.map((post) => (
+            <div key={post.id} className="post">
+              <Post the_post={post} />
+            </div>
+          ))}
+        </main>
+      </div>
+      <style jsx>{`
+        .post {
+          background: var(--geist-background);
+          transition: box-shadow 0.1s ease-in;
+        }
+
+        .post:hover {
+          box-shadow: 1px 1px 3px #aaa;
+        }
+
+        .post + .post {
+          margin-top: 2rem;
+        }
+      `}</style>
+    </Layout>
+  );
+};
+
+
+export default Drafts;
+
+
+[STEP: 26]
+Create the the "publishing" functionality. It is api routed, non- navigatable back end code.
+Getting the posts on the drafts page to go to the index page when you click the publish button. 
+----------------------------------------------------
+// pages/api/publish/[id].ts
+
+import prisma from '../../../lib/prisma';
+
+
+export default async function Publish (req, res) {
+  const postId = req.query.id;
+  const post = await prisma.post.update({
+    where: { id: postId },
+    data: { published: true },
+  });
+  res.json(post);
+
+
+
+  [STEP 27:]
+  Next, we will create the individual pages for each post. Each post will have its own generated [id] page. These pages are navigatable because they render an html element.
+  ----------------------------------------------------
+  // pages/p/[id].tsx
+
+import React from "react";
+import ReactMarkdown from "react-markdown";
+import Layout from "../../components/Layout";
+import prisma from '../../lib/prisma';
+import Router from 'next/router';
+
+export const getServerSideProps = async ({ params }) => {
+  const post = await prisma.post.findUnique({
+    where: {
+      id: String(params?.id),
+    },
+    include: {
+      author: {
+        select: { name: true },
+      },
+    },
+  });
+  return {
+    props: post,
+  };
+};
+
+const publishPost = async (id) => {
+  await fetch(`/api/publish/${id}`, {
+    method: 'PUT',
+  });
+  await Router.push('/');
+};
+
+const deletePost = async (id) => {
+  await fetch(`/api/post/${id}`, {
+    method: 'DELETE',
+  });
+  Router.push('/');
+};
+
+const Post = (props) => {
+  let title = props.title;
+  if (!props.published) {
+    title = `${title} (Draft)`;
+  }
+
+  const userHasValidSession = true; // Set the logic to determine if the user has a valid session
+  const postBelongsToUser = true; // Set the logic to determine if the post belongs to the user
+
+  return (
+    <Layout>
+      <div>
+        <h2>{title}</h2>
+        <p>By {props?.author?.name || "Unknown author"}</p>
+        <ReactMarkdown children={props.content} />
+        
+        {!props.published && userHasValidSession && postBelongsToUser && (
+          <button onClick={() => publishPost(props.id)}>Publish</button>
+        )}
+
+        {userHasValidSession && postBelongsToUser && (
+          <button onClick={() => deletePost(props.id)}>Delete</button>
+        )}
+      </div>
+
+      <style jsx>{`
+        .page {
+          background: white;
+          padding: 2rem;
+        }
+
+        .actions {
+          margin-top: 2rem;
+        }
+
+        button {
+          background: #ececec;
+          border: 0;
+          border-radius: 0.125rem;
+          padding: 1rem 2rem;
+        }
+
+        button + button {
+          margin-left: 1rem;
+        }
+      `}</style>
+    </Layout>
+  );
+};
+
+export default Post;
+----------------------------------------------------
+
+[STEP: 27] 
+Create the delete functionality in the api directory. 
+----------------------------------------------------
+import { getSession } from 'next-auth/react';
+import prisma from '../../../lib/prisma';
+
+export default async function handle(req, res) {
+  const session = await getSession({ req });
+
+  if (!session) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  if (req.method !== 'DELETE') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
+  const postId = req.body.id;
+
+  try {
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+    });
+
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    console.log('Session object:', session); // Log the entire session object
+
+
+    // Check if the authenticated user is the owner of the post
+    if (post.authorId !== session.user) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    // Delete the post
+    await prisma.post.delete({
+      where: { id: postId },
+    });
+
+    res.status(200).json({ message: 'Post deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
+----------------------------------------------------
+DONE! Add whatever you like. :) 
+
+
+
+Because we have made our app using env variables to fit the locahost, we will have to do two things before we can deploy our app to vercel (the host of our site).  
+
+[1] Create a new github Oauth app
+
+This time, instead of plugging in your localhost callback url, you will be using vercel's callback url. now your site is set goes back to vercel's made up homepage for your new site instead of your localhost (your index file homepage location). Remember, the callback url crfeated in vercel has to be the same as the NEXTAUTH_URL (callback) url you are changing presently ( with the .vercel.app/api/auth end tag) 
+Also, update the new CLIENT_ID, and CLIENT_SECRET ( which may be under the old names of GITHUB_SECRET and GITHUB_ID, however I made you change that earlier so make sure its the right syntax) 
+
+[2] Create a new repo from Github and push the new stuff
+After pushing to github, sign in to Vercel and start the deployment process. You many need to provide the following: 
+ - SECRET
+ - NEXTAUTH_URL
+ - GITHUB_ID or CLIENT_ID
+ - GITHUB_SECRET or CLIENT_SECRET
+
+a few more buttons plus linking your postgres database in the steps, and your site is now deployed.
+
+All future updates to the module will affect site performance, so keep in mind changes can happen which could affect the behaviour of your site, however all the tools used in this project are sort of latest tech so no worries for a while. 
+
+
+
+
+
+
+
