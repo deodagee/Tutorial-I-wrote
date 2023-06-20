@@ -1,2 +1,2 @@
-# Tutorial-I-wrote
-Make a crud app / NextJS, Prisma &amp; Postgres
+# No sleep, while the sun is shining over me.. No rest, while the day is hanging.. hanging... 
+#Took me all of three days to write this ya'll yolo 
