@@ -1,3 +1,1 @@
-# Took me all of three days to write this tut ya'll yolo 
-#No sleep, while the sun is shining over me.. No rest, while the day is hanging.. hanging... 
-My website: astrumstellar.com
+
